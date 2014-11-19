@@ -35,6 +35,13 @@ options:
     default: "false"
     choices: [ "true", "false" ]
     aliases: []
+  disable_updates:
+    description:
+      - If a stack is present, do not update
+    required: false
+    default: "false"
+    choices: [ "true", "false" ]
+    aliases: []
   template_parameters:
     description:
       - a list of hashes of all the template variables for the stack
@@ -197,6 +204,7 @@ def main():
             state=dict(default='present', choices=['present', 'absent']),
             template=dict(default=None, required=True),
             disable_rollback=dict(default=False, type='bool'),
+            disable_updates=dict(default=False, type='bool'),
             tags=dict(default=None)
         )
     )
@@ -209,6 +217,7 @@ def main():
     stack_name = module.params['stack_name']
     template_body = open(module.params['template'], 'r').read()
     disable_rollback = module.params['disable_rollback']
+    disable_updates = module.params['disable_updates']
     template_parameters = module.params['template_parameters']
     tags = module.params['tags']
 
@@ -260,7 +269,7 @@ def main():
     # if the state is present and the stack already exists, we try to update it
     # AWS will tell us if the stack template and parameters are the same and
     # don't need to be updated.
-    if update:
+    if update and not disable_updates:
         try:
             cfn.update_stack(stack_name, parameters=template_parameters_tup,
                              template_body=template_body,
